@@ -1,34 +1,38 @@
 #!/bin/bash
 
 # Makes device ready for production
-# Create new User
-# Create accesspoint
-# Ability for fallback and reset back to hotspot
+# TODO: Create new User
+# TODO: Create accesspoint
+# TODO: Ability for fallback and reset back to hotspot
 
 # Update packages
-#apt-get update
-#apt-get -y upgrade
+apt-get update
+apt-get -y upgrade
 
 # Install requirements for accesspoint dnsmasq and hostapd
-#apt-get -y install dnsmasq hostapd
+apt-get -y install dnsmasq hostapd
 
+echo "" > /etc/dhcpcd.conf
 # Stop dnsmasq and hostapd until fully configured
 systemctl stop dnsmasq
 systemctl stop hostapd
 
-# TODO: May need to reboot
 
-# Configure a static interface on wlan0
-# TODO: Maybye add to /etc/dchpcd.conf file
-# ip addr flush dev wlan0
-ip addr add 192.168.4.1/24 dev wlan0
+# Taking backup of dhcpcd.conf, then setting static ip for wlan0 
+mv /etc/dhcpcd.conf /etc/dhcpcd.conf.orig # TODO: Moves edited file if run twice, maybye check if orig exits?
+echo "
+interface=wlan0
+	static ip_address=192.168.4.1/24
+	nohook wpa_supplicant" >> /etc/dhcpcd.conf
+service dhcpcd restart
 
 # Taking backup of dnsmasq.conf, then setting static ip for wlan0 
-mv /etc/dnsmasq.conf /etc/dnsmasq.conf.orig
+mv /etc/dnsmasq.conf /etc/dnsmasq.conf.orig # TODO: Moves edited file if run twice, maybye check if orig exits?
 echo "
 interface=wlan0
 dhcp-range=192.168.4.2,192.168.4.20,255.255.255.0,24h
 " > /etc/dnsmasq.conf
+service dhcpcd restart
 
 # Move config file for access point
 # TODO: Make access point public open
@@ -50,3 +54,29 @@ iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 sh -c "iptables-save > /etc/iptables.ipv4.nat"
 
 sed -i 's/exit 0/iptables\-restore \< \/etc\/iptables.ipv4.nat \n exit 0/g' /etc/rc.local
+
+
+# Install apache2
+apt install apache2 -y
+
+# Enable cgi
+a2enmod cgi
+systemctl restart apache2
+
+# Move app to web root
+cp -RF ./app/* /var/www/html
+
+
+
+# Make device ready to read moisture
+
+# TODO: Enable SPI in config file
+
+# Install python dev and git
+apt-get install git python-dev
+
+cd py-spidev/
+python setup.py install
+cd ..
+
+
