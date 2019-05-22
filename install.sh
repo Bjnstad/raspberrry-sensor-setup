@@ -12,6 +12,11 @@ apt-get -y upgrade
 # Install requirements for accesspoint dnsmasq and hostapd
 apt-get -y install dnsmasq hostapd
 
+mkdir /etc/soilsense
+
+cp ./configs/dhcpcd.wifi.conf /etc/soilsense/dhcpcd.conf
+
+
 echo "" > /etc/dhcpcd.conf
 # Stop dnsmasq and hostapd until fully configured
 systemctl stop dnsmasq
@@ -64,7 +69,7 @@ a2enmod cgi
 systemctl restart apache2
 
 # Move app to web root
-cp -RF ./app/* /var/www/html
+cp -Rf ./app/* /var/www/html
 
 
 
